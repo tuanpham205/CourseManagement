@@ -8,9 +8,17 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CourseRepository extends JpaRepository<Course, Integer>
-{
+public interface CourseRepository extends JpaRepository<Course, Integer> {
+
+    // Check trùng tên
     Optional<Course> findByCourseName(String courseName);
-    // Tìm kiếm khóa học theo tên chứa chuỗi (dùng cho API tìm kiếm)
+
+    // Search theo tên
     List<Course> findByCourseNameContainingIgnoreCase(String courseName);
+
+    // Check trùng tên khi update (loại trừ ID hiện tại)
+    boolean existsByCourseNameAndIdNot(String courseName, Integer id);
+
+    // Check tồn tại theo tên (dùng cho service)
+    boolean existsByCourseName(String courseName);
 }

@@ -15,7 +15,7 @@ public class Admin {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false) // Bổ sung để đảm bảo ràng buộc
+    @Column(nullable = false)
     private String password; // LƯU Ý: Phải là giá trị ĐÃ ĐƯỢC HASH
 
     public Admin() {

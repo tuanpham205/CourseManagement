@@ -11,10 +11,7 @@ import java.time.LocalDate;
 
 @MappedSuperclass
 public abstract class Person {
-
-    // 💡 Khóa chính
     @Id
-    // Thường sử dụng GenerationType.IDENTITY hoặc SEQUENCE cho lớp cơ sở nếu các lớp con sử dụng chiến lược bảng riêng biệt.
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
@@ -30,8 +27,16 @@ public abstract class Person {
     private String email;
     private String phone;
     private LocalDate dateOfBirth;
+
+    // **********************************************
+    // THÊM TRƯỜNG ROLE
+    // Vì Person là @MappedSuperclass, cột này sẽ được tạo trong
+    // tất cả các bảng con (students, teachers, etc.)
+    private String role;
+    // **********************************************
+
     public Person(Integer id, String username, String password, String fullname,
-                  String email, String phone, LocalDate dateOfBirth) {
+                  String email, String phone, LocalDate dateOfBirth, String role) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -39,17 +44,18 @@ public abstract class Person {
         this.email = email;
         this.phone = phone;
         this.dateOfBirth = dateOfBirth;
+        this.role = role;
     }
+
     public Person() {
     }
 
-    /**
-     * Phương thức trừu tượng để hiển thị chi tiết cụ thể cho từng vai trò (Teacher/Student).
-     *Đã thêm @Transient để ngăn Hibernate cố gắng ánh xạ nó thành cột DB, vì nó là một giá trị TÍNH TOÁN/TRỪU TƯỢNG.
-     */
     @Transient
     public abstract String getSpecificDetails();
-    // Đảm bảo kiểu dữ liệu ID là Integer (theo quy tắc Spring Data JPA)
+
+    // ==============================================
+    // Getter và Setter
+    // ==============================================
     public Integer getId() {
         return id;
     }
@@ -103,5 +109,23 @@ public abstract class Person {
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", fullname='" + fullname + '\'' +
+                ", role='" + role + '\'' +
+                '}';
     }
 }

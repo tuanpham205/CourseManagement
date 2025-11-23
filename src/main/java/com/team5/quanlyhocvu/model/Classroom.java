@@ -1,7 +1,6 @@
 package com.team5.quanlyhocvu.model;
 
 import jakarta.persistence.*;
-import java.util.ArrayList;
 
 @Entity
 @Table(name = "classrooms")
@@ -13,16 +12,20 @@ public class Classroom {
 
     @Column(nullable = false)
     private String className;
+
     private int maxCapacity;
     private int lessonCount;
     private String inputStandard;
     private String outputStandard;
 
-    private Integer courseId;
+    @ManyToOne
+    @JoinColumn(name = "course_id")
+    private Course course;
 
     private Integer teacherId;
 
     public Classroom() {}
+
     public Classroom(String name, int capacity, int lessonCount, String input, String output) {
         this.className = name;
         this.maxCapacity = capacity;
@@ -30,6 +33,7 @@ public class Classroom {
         this.inputStandard = input;
         this.outputStandard = output;
     }
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -48,10 +52,16 @@ public class Classroom {
     public String getOutputStandard() { return outputStandard; }
     public void setOutputStandard(String outputStandard) { this.outputStandard = outputStandard; }
 
-    public Integer getCourseId() { return courseId; }
-    public void setCourseId(Integer courseId) { this.courseId = courseId; }
+    public Course getCourseId() { return course; }
+    public void setCourseId(Course course) { this.course = course; }
 
     public Integer getTeacherId() { return teacherId; }
     public void setTeacherId(Integer teacherId) { this.teacherId = teacherId; }
 
+    public void setCourse(Course course) {this.course = course;}
+
+    public Course getCourse() {
+        return this.course;
+    }
 }
+

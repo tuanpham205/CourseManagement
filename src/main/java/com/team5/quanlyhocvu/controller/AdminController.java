@@ -1,46 +1,37 @@
 package com.team5.quanlyhocvu.controller;
 
-import com.team5.quanlyhocvu.model.Admin;
-import com.team5.quanlyhocvu.model.Student;
-import com.team5.quanlyhocvu.model.Teacher;
+import java.util.List;
+import com.team5.quanlyhocvu.model.*;
 import com.team5.quanlyhocvu.service.AdminService;
+import com.team5.quanlyhocvu.service.EnglishLevelService;
 import com.team5.quanlyhocvu.service.exception.ResourceNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
-// Giả định các DTO sau tồn tại để truyền dữ liệu tạo/phân công một cách rõ ràng
-// import com.team5.quanlyhocvu.dto.UserCreationRequest;
-// import com.team5.quanlyhocvu.dto.TeacherAssignRequest;
-
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
 public class AdminController {
 
     private final AdminService adminService;
-
-    public AdminController(AdminService adminService) {
+    private final EnglishLevelService englishLevelService;
+    public AdminController(AdminService adminService, EnglishLevelService englishLevelService) {
         this.adminService = adminService;
+        this.englishLevelService = englishLevelService;
     }
+    // TẠO TÀI KHOẢN (Admin, Student, Teacher)
 
-    /**
-     * Tạo Admin mới (Siêu Quản trị)
-     * POST /api/admin/users/admin
-     */
+    // Tạo Admin mới
     @PostMapping("/users/admin")
     public ResponseEntity<Admin> createAdmin(@RequestBody Admin admin) {
-        // Lưu ý: Mật khẩu được hash trong AdminService
         Admin savedAdmin = adminService.saveAdmin(admin);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedAdmin);
     }
 
-    /**
-     * 🔍 Lấy thông tin Admin theo ID
-     * GET /api/admin/users/admin/{id}
-     */
+    // Lấy thông tin Admin theo ID
     @GetMapping("/users/admin/{id}")
     public ResponseEntity<Admin> getAdmin(@PathVariable Integer id) {
         Admin admin = adminService.getAdminById(id)
@@ -48,32 +39,58 @@ public class AdminController {
         return ResponseEntity.ok(admin);
     }
 
-    /**
-     * 👨‍🎓 Tạo tài khoản Học viên mới
-     * POST /api/admin/users/student
-     * Giả định RequestBody là Student model
-     */
+    // Tạo tài khoản Học viên mới
     @PostMapping("/users/student")
-    public ResponseEntity<Student> createStudent(@RequestBody Student student) {
-        // Logic hash mật khẩu và lưu Student
-        Student newStudent = adminService.createStudentAccount(student);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newStudent);
+    public ResponseEntity<Student> createStudent(@RequestBody  Student student) {
+        Student saved = adminService.createStudentAccount(student);
+
+        saved.setPassword(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    /**
-     * 👨‍🏫 Tạo tài khoản Giáo viên mới
-     * POST /api/admin/users/teacher
-     * Giả định RequestBody là Teacher model
-     */
+    // Tạo tài khoản Giáo viên mới
     @PostMapping("/users/teacher")
     public ResponseEntity<Teacher> createTeacher(@RequestBody Teacher teacher) {
-        // Logic hash mật khẩu và lưu Teacher
-        Teacher newTeacher = adminService.createTeacherAccount(teacher);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newTeacher);
+        Teacher saved = adminService.createTeacherAccount(teacher);
+        saved.setPassword(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
+
+    // Tạo khóa học mới
+    @PostMapping("/course")
+    public ResponseEntity<Course> createCourse(@RequestBody Course course) {
+        Course saved = adminService.createCourse(course);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    // Lấy danh sách khóa học
+    @GetMapping("/courses")
+    public ResponseEntity<List<Course>> getAllCourses() {
+        return ResponseEntity.ok(adminService.getAllCourses());
+    }
+
+    // Tạo lớp học
+    @PostMapping("/course/{courseId}/classroom")
+    public ResponseEntity<Classroom> createClassroom(
+            @PathVariable Integer courseId,
+            @RequestBody Classroom classroom
+    ) {
+        Classroom saved = adminService.createClassroom(courseId, classroom);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    // Lấy danh sách lớp hoc
+    @GetMapping("/classrooms")
+    public ResponseEntity<List<Classroom>> getAllClassrooms() {
+        return ResponseEntity.ok(adminService.getAllClassrooms());
+    }
+
+
+    // GÁN LỚP HỌC (ASSIGNMENTS)
+
     /**
-     * 🏷️ API gán học viên vào lớp học
-     * PUT /api/admin/assignments/student/class
+     * API gán học viên vào lớp học.
+     * Sử dụng @RequestParam để lấy ID từ query string: /assignments/student/class?studentId=1&classId=101
      */
     @PutMapping("/assignments/student/class")
     public ResponseEntity<Student> assignStudentToClass(
@@ -81,13 +98,12 @@ public class AdminController {
             @RequestParam Integer classId
     ) {
         Student updatedStudent = adminService.assignStudentToClass(studentId, classId);
-        return ResponseEntity.ok(updatedStudent); // Trả về đối tượng Student đã cập nhật
+        return ResponseEntity.ok(updatedStudent);
     }
 
     /**
-     * 🏷️ API phân công Giáo viên vào Lớp học
-     * PUT /api/admin/assignments/teacher/class
-     * Body: { "teacherId": 101, "classroomId": 201 }
+     * API phân công Giáo viên vào Lớp học.
+     * Sử dụng @RequestParam để lấy ID từ query string: /assignments/teacher/class?teacherId=2&classroomId=101
      */
     @PutMapping("/assignments/teacher/class")
     public ResponseEntity<Teacher> assignTeacherToClass(
@@ -95,7 +111,19 @@ public class AdminController {
             @RequestParam Integer classroomId
     ) {
         Teacher updatedTeacher = adminService.assignTeacherToClassroom(teacherId, classroomId);
-        return ResponseEntity.ok(updatedTeacher); // Trả về đối tượng Teacher đã cập nhật
+        return ResponseEntity.ok(updatedTeacher);
     }
+    //updatelevel
+    @PutMapping("/students/{studentId}/english-level")
+    public ResponseEntity<EnglishLevel> updateStudentLevel(
+            @PathVariable int studentId,
+            @RequestParam(required = false) Double ieltsBand,
+            @RequestParam(required = false) Integer toeicScore,
+            @RequestParam(required = false) String vstepLevel
+    ) {
+        EnglishLevel updated = englishLevelService.updateLevel(studentId, ieltsBand, toeicScore, vstepLevel);
+        return ResponseEntity.ok(updated);
+    }
+
 
 }
