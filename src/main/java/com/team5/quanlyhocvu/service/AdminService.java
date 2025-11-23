@@ -19,6 +19,7 @@ public class AdminService {
     private final TeacherRepository teacherRepository;
     private final ClassroomRepository classroomRepository;
     private final CourseRepository courseRepository;
+    private final EnglishLevelRepository englishLevelRepository; // Đã thêm
     private final PasswordEncoder passwordEncoder;
     private final EnglishLevelService englishLevelService;
 
@@ -28,7 +29,8 @@ public class AdminService {
                         ClassroomRepository classroomRepository,
                         CourseRepository courseRepository,
                         PasswordEncoder passwordEncoder,
-                        EnglishLevelService englishLevelService) {
+                        EnglishLevelService englishLevelService,
+                        EnglishLevelRepository englishLevelRepository) { // Đã thêm vào constructor
         this.adminRepository = adminRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
@@ -36,15 +38,13 @@ public class AdminService {
         this.courseRepository = courseRepository;
         this.passwordEncoder = passwordEncoder;
         this.englishLevelService = englishLevelService;
+        this.englishLevelRepository = englishLevelRepository; // Khởi tạo
     }
 
     // =======================================
     // 1. QUẢN LÝ TÀI KHOẢN (CRUD ADMIN)
     // =======================================
 
-    /**
-     * Lưu Admin mới. Nhận vào Entity Admin.
-     */
     @Transactional
     public Admin saveAdmin(Admin admin) {
         if (adminRepository.findByEmail(admin.getEmail()).isPresent()) {
@@ -59,15 +59,21 @@ public class AdminService {
     }
 
     /**
-     * Tạo tài khoản Học viên mới.
+     * Tạo tài khoản Học viên mới. (ĐÃ SỬA LỖI KHỞI TẠO EnglishLevel)
      */
     @Transactional
     public Student createStudentAccount(Student student) {
+
         if(studentRepository.existsByEmail(student.getEmail())) {
             throw new DataConflictException("Email da ton tai!");
         }
+
+        EnglishLevel newLevel = new EnglishLevel();
+        newLevel = englishLevelRepository.save(newLevel);
+        student.setLevel(newLevel);
         student.setPassword(passwordEncoder.encode(student.getPassword()));
         student.setRole("STUDENT");
+
         return studentRepository.save(student);
     }
 
@@ -90,9 +96,6 @@ public class AdminService {
 
     /**
      * Gán học viên vào lớp học.
-     * @param studentId ID học viên
-     * @param classId ID lớp học
-     * @return Student đã được cập nhật
      */
     @Transactional
     public Student assignStudentToClass(Integer studentId, Integer classId) {
@@ -111,24 +114,19 @@ public class AdminService {
         }
 
         // KIỂM TRA 2: Trình độ có phù hợp không
-        EnglishLevel studentLevel = student.getLevel(); // Lấy Entity EnglishLevel
+        EnglishLevel studentLevel = student.getLevel();
 
-        // Kiểm tra nếu chưa có thông tin trình độ nào
         if (studentLevel == null) {
             throw new RegistrationException("Học viên chưa có thông tin trình độ tiếng Anh.");
         }
 
         String requiredStandard = classroom.getInputStandard();
-
-        // LẤY GIÁ TRỊ SO SÁNH ĐÃ CHUẨN HÓA TỪ ENTITY ENGLISHLEVEL
         String studentComparisonLevel = studentLevel.getComparisonLevel();
 
-        // Kiểm tra nếu chưa có điểm số so sánh
         if (studentComparisonLevel == null || studentComparisonLevel.isEmpty()) {
             throw new RegistrationException("Học viên chưa có điểm số được cập nhật để so sánh.");
         }
 
-        // Gọi hàm kiểm tra đạt chuẩn (sử dụng 2 chuỗi so sánh)
         boolean meetsStandard = englishLevelService.meetsInputStandard(
                 studentComparisonLevel,
                 requiredStandard
@@ -148,10 +146,7 @@ public class AdminService {
     }
 
     /**
-     * Phân công Giáo viên vào Lớp học (Đã sửa để đảm bảo tính nhất quán dữ liệu 2 chiều)
-     * @param teacherId ID Giảng viên
-     * @param classroomId ID Lớp học
-     * @return Teacher đã được cập nhật
+     * Phân công Giáo viên vào Lớp học (Đảm bảo tính nhất quán dữ liệu 2 chiều)
      */
     @Transactional
     public Teacher assignTeacherToClassroom(Integer teacherId, Integer classroomId) {
@@ -161,33 +156,26 @@ public class AdminService {
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Lớp học ID: " + classroomId));
 
-        // LẤY ID giáo viên cũ. (Giả định Classroom lưu teacherId là Integer)
         Integer oldTeacherId = classroom.getTeacherId();
 
-        // 0. Trường hợp không cần thay đổi
         if (teacherId.equals(oldTeacherId)) {
-            // Đảm bảo teacher mới vẫn có classroomId này trong danh sách của họ
             if (!newTeacher.getClassroomIds().contains(classroomId)) {
                 newTeacher.addClassroomId(classroomId);
                 return teacherRepository.save(newTeacher);
             }
-            return newTeacher; // Đã gán và dữ liệu nhất quán
+            return newTeacher;
         }
 
-        // 1. Xử lý Giáo viên cũ (nếu có)
         if (oldTeacherId != null) {
             teacherRepository.findById(oldTeacherId).ifPresent(oldTeacher -> {
-                // Xóa ID lớp học khỏi danh sách của giáo viên cũ
                 oldTeacher.removeClassroomId(classroomId);
                 teacherRepository.save(oldTeacher);
             });
         }
 
-        // 2. Gán giáo viên mới vào lớp và cập nhật lớp
         classroom.setTeacherId(teacherId);
         classroomRepository.save(classroom);
 
-        // 3. Cập nhật Giáo viên mới: Thêm ID lớp học vào danh sách của giáo viên mới
         newTeacher.addClassroomId(classroomId);
         return teacherRepository.save(newTeacher);
     }

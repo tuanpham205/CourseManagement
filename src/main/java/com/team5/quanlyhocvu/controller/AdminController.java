@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @PreAuthorize("hasRole('ADMIN')")
 @RestController
@@ -117,11 +118,17 @@ public class AdminController {
     @PutMapping("/students/{studentId}/english-level")
     public ResponseEntity<EnglishLevel> updateStudentLevel(
             @PathVariable int studentId,
-            @RequestParam(required = false) Double ieltsBand,
-            @RequestParam(required = false) Integer toeicScore,
-            @RequestParam(required = false) String vstepLevel
+            @RequestBody Map<String, Object> levelData
     ) {
-        EnglishLevel updated = englishLevelService.updateLevel(studentId, ieltsBand, toeicScore, vstepLevel);
+        Double ieltsBand = (Double) levelData.get("ieltsBand");
+        Integer toeicScore = (Integer) levelData.get("toeicScore");
+        String vstepLevel = (String) levelData.get("vstepLevel");
+        EnglishLevel updated = englishLevelService.updateLevel(
+                studentId,
+                ieltsBand,
+                toeicScore,
+                vstepLevel
+        );
         return ResponseEntity.ok(updated);
     }
 

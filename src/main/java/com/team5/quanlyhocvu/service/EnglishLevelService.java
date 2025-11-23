@@ -34,7 +34,7 @@ public class EnglishLevelService {
     }
 
     // =======================================
-    // 1. LOGIC CẬP NHẬT TRÌNH ĐỘ
+    // 1. LOGIC CẬP NHẬT TRÌNH ĐỘ (ĐÃ SỬA)
     // =======================================
 
     @Transactional
@@ -45,41 +45,45 @@ public class EnglishLevelService {
 
         Course course = student.getCourse();
 
-        if (course == null) {
-            throw new RuntimeException("Student has not registered any course");
-        }
-
         EnglishLevel level = student.getLevel();
 
         if (level == null) {
             level = new EnglishLevel();
         }
 
-        String comparisonValue = null;
-
-        if (course.getCourseName().equalsIgnoreCase("IELTS")) {
+        if (course == null) {
             level.setIeltsBand(ieltsBand);
-            level.setToeicScore(null);
-            level.setVstepLevel(null);
-            if (ieltsBand != null) comparisonValue = String.format("IELTS %.1f", ieltsBand);
-        }
-
-        else if (course.getCourseName().equalsIgnoreCase("TOEIC")) {
             level.setToeicScore(toeicScore);
-            level.setIeltsBand(null);
-            level.setVstepLevel(null);
-            if (toeicScore != null) comparisonValue = String.format("TOEIC %d", toeicScore);
-        }
-
-        else if (course.getCourseName().equalsIgnoreCase("VSTEP")) {
             level.setVstepLevel(vstepLevel);
-            level.setIeltsBand(null);
-            level.setToeicScore(null);
-            if (vstepLevel != null) comparisonValue = String.format("VSTEP %s", vstepLevel);
         }
 
-        EnglishLevel savedLevel = englishLevelRepository.save(level);
+        else {
+            String comparisonValue = null;
 
+            if (course.getCourseName().equalsIgnoreCase("IELTS")) {
+                level.setIeltsBand(ieltsBand);
+                level.setToeicScore(null);
+                level.setVstepLevel(null);
+                if (ieltsBand != null) comparisonValue = String.format("IELTS %.1f", ieltsBand);
+            }
+
+            else if (course.getCourseName().equalsIgnoreCase("TOEIC")) {
+                level.setToeicScore(toeicScore);
+                level.setIeltsBand(null);
+                level.setVstepLevel(null);
+                if (toeicScore != null) comparisonValue = String.format("TOEIC %d", toeicScore);
+            }
+
+            else if (course.getCourseName().equalsIgnoreCase("VSTEP")) {
+                level.setVstepLevel(vstepLevel);
+                level.setIeltsBand(null);
+                level.setToeicScore(null);
+                if (vstepLevel != null) comparisonValue = String.format("VSTEP %s", vstepLevel);
+            }
+        }
+
+        // Lưu EnglishLevel và cập nhật lại cho Student
+        EnglishLevel savedLevel = englishLevelRepository.save(level);
         student.setLevel(savedLevel);
         studentRepository.save(student);
 
@@ -87,7 +91,7 @@ public class EnglishLevelService {
     }
 
     // =======================================
-    // 2. LOGIC KIỂM TRA ĐẠT CHUẨN ĐẦU VÀO
+    // 2. LOGIC KIỂM TRA ĐẠT CHUẨN ĐẦU VÀO (GIỮ NGUYÊN)
     // =======================================
 
     public boolean meetsInputStandard(String studentComparisonLevel, String requiredStandard) {
