@@ -16,7 +16,6 @@ public class Student extends Person {
 
     private String address;
 
-    // Field (Thuộc tính) thực tế
     @OneToOne
     @JoinColumn(name = "classroom_id")
     private Classroom currentClassroom;
@@ -73,15 +72,7 @@ public class Student extends Person {
         return this.currentClassroom.getCourse();
     }
 
-    public Double getIeltsBand() {
-        return this.englishLevel.getIeltsBand();
-    }
-
-    public Integer getToeicScore() {
-        return this.englishLevel.getToeicScore();
-    }
-
-    public String getVstepLevel() {
-        return this.englishLevel.getVstepLevel();
-    }
+    public Double getIeltsBand() { return englishLevel != null ? englishLevel.getIeltsBand() : null; }
+    public Integer getToeicScore() { return englishLevel != null ? englishLevel.getToeicScore() : null; }
+    public String getVstepLevel() { return englishLevel != null ? englishLevel.getVstepLevel() : null; }
 }

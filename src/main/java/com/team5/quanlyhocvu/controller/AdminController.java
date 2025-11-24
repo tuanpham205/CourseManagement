@@ -4,6 +4,7 @@ import java.util.List;
 import com.team5.quanlyhocvu.model.*;
 import com.team5.quanlyhocvu.service.AdminService;
 import com.team5.quanlyhocvu.service.EnglishLevelService;
+import com.team5.quanlyhocvu.service.RegistrationRequestService;
 import com.team5.quanlyhocvu.service.exception.ResourceNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -19,9 +20,11 @@ public class AdminController {
 
     private final AdminService adminService;
     private final EnglishLevelService englishLevelService;
-    public AdminController(AdminService adminService, EnglishLevelService englishLevelService) {
+    private final RegistrationRequestService registrationRequestService;
+    public AdminController(AdminService adminService, EnglishLevelService englishLevelService, RegistrationRequestService registrationRequestService) {
         this.adminService = adminService;
         this.englishLevelService = englishLevelService;
+        this.registrationRequestService = registrationRequestService;
     }
     // TẠO TÀI KHOẢN (Admin, Student, Teacher)
 
@@ -131,6 +134,28 @@ public class AdminController {
         );
         return ResponseEntity.ok(updated);
     }
+    /**
+     * API Lấy danh sách yêu cầu tư vấn (Lead Management).
+     * @return Danh sách tất cả các yêu cầu đăng ký.
+     */
+    @GetMapping("/consultation/requests")
+    public ResponseEntity<List<RegistrationRequest>> getAllRegistrationRequests() {
+        return ResponseEntity.ok(registrationRequestService.getAllRequests());
+    }
 
+    /**
+     * API Cập nhật trạng thái, ghi chú và BỔ SUNG LEVEL bởi Admin.
+     * Nhận Map<String, Object> để xử lý linh hoạt các trường cập nhật.
+     * @param id ID của yêu cầu.
+     * @param updateFields JSON Body chứa các trường cần cập nhật (status, adminNote, ieltsBand, etc.).
+     */
+    @PutMapping("/consultation/requests/{id}")
+    public ResponseEntity<RegistrationRequest> updateRegistrationRequest(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Object> updateFields
+    ) {
+        RegistrationRequest updatedRequest = registrationRequestService.updateRequest(id, updateFields);
+        return ResponseEntity.ok(updatedRequest);
+    }
 
 }
