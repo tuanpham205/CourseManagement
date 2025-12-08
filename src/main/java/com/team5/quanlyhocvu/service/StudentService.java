@@ -1,8 +1,12 @@
 package com.team5.quanlyhocvu.service;
 
 import com.team5.quanlyhocvu.model.Student;
+import com.team5.quanlyhocvu.model.RegistrationRequest;
 import com.team5.quanlyhocvu.repository.StudentRepository;
+import com.team5.quanlyhocvu.repository.RegistrationRequestRepository;
+import com.team5.quanlyhocvu.service.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,9 +15,45 @@ import java.util.Optional;
 public class StudentService {
 
     private final StudentRepository studentRepository;
+    private final RegistrationRequestRepository registrationRequestRepository;
+    private final InvoiceService invoiceService;
 
-    public StudentService(StudentRepository studentRepository) {
+    public StudentService(
+            StudentRepository studentRepository,
+            RegistrationRequestRepository registrationRequestRepository,
+            InvoiceService invoiceService) {
         this.studentRepository = studentRepository;
+        this.registrationRequestRepository = registrationRequestRepository;
+        this.invoiceService = invoiceService;
+    }
+
+    // HÀM TẠO TÀI KHOẢN HỌC VIÊN CHÍNH THỨC
+    @Transactional
+    public Student createStudentAccount(Integer registrationRequestId) {
+
+        // 1. KIỂM TRA THANH TOÁN (Logic nghiệp vụ BẮT BUỘC)
+        boolean isPaid = invoiceService.checkPaymentStatus(registrationRequestId);
+
+        if (!isPaid) {
+            // Ném ngoại lệ nếu hóa đơn chưa được thanh toán đầy đủ
+            throw new IllegalStateException("Hóa đơn của Lead ID " + registrationRequestId +
+                    " chưa được thanh toán đầy đủ. KHÔNG thể tạo tài khoản học viên.");
+        }
+
+        // 2. Lấy thông tin Lead (RegistrationRequest)
+        RegistrationRequest lead = registrationRequestRepository.findById(registrationRequestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Lead ID: " + registrationRequestId));
+
+        // 3. Thực hiện chuyển đổi và tạo tài khoản Student
+        Student student = new Student();
+
+        // Chuyển đổi dữ liệu từ Lead sang Student Entity
+        student.setFullname(lead.getFullName());
+        student.setEmail(lead.getEmail());
+        student.setPhone(lead.getPhone());
+
+        // 4. Lưu Student vào cơ sở dữ liệu
+        return studentRepository.save(student);
     }
 
     /*
@@ -59,7 +99,7 @@ public class StudentService {
     }
 
     /*
-      Tạo mới hoặc lưu học viên
+      Tạo mới hoặc lưu học viên (Có thể dùng hàm createStudentAccount thay thế nếu từ Lead)
      */
     public Student saveStudent(Student student) {
         return studentRepository.save(student);
@@ -68,9 +108,12 @@ public class StudentService {
     /*
       Cập nhật thông tin cá nhân của học viên (Update Profile)
      */
+    @Transactional
     public Student updateStudentProfile(Integer id, Student newStudentData) {
         return studentRepository.findById(id)
                 .map(student -> {
+                    // Cần đảm bảo các Getter/Setter (Fullname, Phone, v.v.) khớp với Student Entity
+                    // Giả định Student Entity của bạn có các phương thức setFullname, setPhone, v.v.
                     student.setFullname(newStudentData.getFullname());
                     student.setEmail(newStudentData.getEmail());
                     student.setPhone(newStudentData.getPhone());
@@ -78,7 +121,7 @@ public class StudentService {
                     student.setAddress(newStudentData.getAddress());
                     return studentRepository.save(student);
                 })
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy học viên có ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy học viên có ID: " + id));
     }
 
     /*
@@ -86,7 +129,7 @@ public class StudentService {
      */
     public void deleteStudent(Integer id) {
         if (!studentRepository.existsById(id)) {
-            throw new RuntimeException("Không tìm thấy học viên có ID: " + id);
+            throw new ResourceNotFoundException("Không tìm thấy học viên có ID: " + id);
         }
         studentRepository.deleteById(id);
     }

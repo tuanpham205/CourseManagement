@@ -1,5 +1,7 @@
 package com.team5.quanlyhocvu.controller;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import com.team5.quanlyhocvu.model.*;
 import com.team5.quanlyhocvu.service.AdminService;
@@ -11,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
+import com.team5.quanlyhocvu.service.InvoiceService;
+import com.team5.quanlyhocvu.service.PaymentService;
+import com.team5.quanlyhocvu.service.StudentService;
 
 @PreAuthorize("hasRole('ADMIN')")
 @RestController
@@ -21,12 +26,20 @@ public class AdminController {
     private final AdminService adminService;
     private final EnglishLevelService englishLevelService;
     private final RegistrationRequestService registrationRequestService;
-    public AdminController(AdminService adminService, EnglishLevelService englishLevelService, RegistrationRequestService registrationRequestService) {
+    private final InvoiceService invoiceService;
+    private final PaymentService paymentService;
+    private final StudentService studentService;
+
+    public AdminController(AdminService adminService, EnglishLevelService englishLevelService, RegistrationRequestService registrationRequestService, InvoiceService invoiceService, PaymentService paymentService, StudentService studentService) {
         this.adminService = adminService;
         this.englishLevelService = englishLevelService;
         this.registrationRequestService = registrationRequestService;
+        this.invoiceService = invoiceService;
+        this.paymentService = paymentService;
+        this.studentService = studentService;
     }
-    // TẠO TÀI KHOẢN (Admin, Student, Teacher)
+
+    // TẠO TÀI KHOẢN (Admin, Teacher)
 
     // Tạo Admin mới
     @PostMapping("/users/admin")
@@ -43,14 +56,7 @@ public class AdminController {
         return ResponseEntity.ok(admin);
     }
 
-    // Tạo tài khoản Học viên mới
-    @PostMapping("/users/student")
-    public ResponseEntity<Student> createStudent(@RequestBody  Student student) {
-        Student saved = adminService.createStudentAccount(student);
-
-        saved.setPassword(null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
+    // TẠO TÀI KHOẢN HỌC VIÊN CŨ ĐÃ BỊ XÓA VÌ VI PHẠM NGHIỆP VỤ.
 
     // Tạo tài khoản Giáo viên mới
     @PostMapping("/users/teacher")
@@ -117,7 +123,8 @@ public class AdminController {
         Teacher updatedTeacher = adminService.assignTeacherToClassroom(teacherId, classroomId);
         return ResponseEntity.ok(updatedTeacher);
     }
-    //updatelevel
+
+    // updatelevel
     @PutMapping("/students/{studentId}/english-level")
     public ResponseEntity<EnglishLevel> updateStudentLevel(
             @PathVariable int studentId,
@@ -134,9 +141,9 @@ public class AdminController {
         );
         return ResponseEntity.ok(updated);
     }
+
     /**
      * API Lấy danh sách yêu cầu tư vấn (Lead Management).
-     * @return Danh sách tất cả các yêu cầu đăng ký.
      */
     @GetMapping("/consultation/requests")
     public ResponseEntity<List<RegistrationRequest>> getAllRegistrationRequests() {
@@ -145,9 +152,6 @@ public class AdminController {
 
     /**
      * API Cập nhật trạng thái, ghi chú và BỔ SUNG LEVEL bởi Admin.
-     * Nhận Map<String, Object> để xử lý linh hoạt các trường cập nhật.
-     * @param id ID của yêu cầu.
-     * @param updateFields JSON Body chứa các trường cần cập nhật (status, adminNote, ieltsBand, etc.).
      */
     @PutMapping("/consultation/requests/{id}")
     public ResponseEntity<RegistrationRequest> updateRegistrationRequest(
@@ -158,4 +162,76 @@ public class AdminController {
         return ResponseEntity.ok(updatedRequest);
     }
 
+
+    // ----------------------------------------------------------------------
+    // QUẢN LÝ THANH TOÁN (INVOICE & PAYMENT)
+    // ----------------------------------------------------------------------
+
+    /**
+     * API Tạo Hóa đơn mới cho một Lead (Registration Request)
+     */
+    @PostMapping("/invoices")
+    public ResponseEntity<Invoice> createInvoice(@RequestBody Map<String, Object> invoiceData) {
+        Integer registrationRequestId = (Integer) invoiceData.get("registrationRequestId");
+        Integer courseId = (Integer) invoiceData.get("courseId");
+        BigDecimal totalAmount = new BigDecimal(invoiceData.get("totalAmount").toString());
+        LocalDate dueDate = LocalDate.parse((String) invoiceData.get("dueDate"));
+
+        Invoice savedInvoice = invoiceService.createInvoice(
+                registrationRequestId,
+                courseId,
+                totalAmount,
+                dueDate
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedInvoice);
+    }
+
+    /**
+     * API Ghi nhận Giao dịch Thanh toán (Admin xác nhận đã nhận tiền)
+     */
+    @PostMapping("/payments/record")
+    public ResponseEntity<Payment> recordPayment(@RequestBody Map<String, Object> paymentData) {
+        Long invoiceId = Long.valueOf(paymentData.get("invoiceId").toString());
+        BigDecimal amount = new BigDecimal(paymentData.get("amount").toString());
+        String methodStr = (String) paymentData.get("methodStr");
+        String note = (String) paymentData.get("note");
+
+        Payment recordedPayment = paymentService.recordPayment(
+                invoiceId,
+                amount,
+                methodStr,
+                note
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(recordedPayment);
+    }
+
+    /**
+     * API Xem chi tiết Hóa đơn theo ID
+     */
+    @GetMapping("/invoices/{id}")
+    public ResponseEntity<Invoice> getInvoice(@PathVariable Long id) {
+        Invoice invoice = invoiceService.getInvoiceById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Hoa don co ID: " + id));
+        return ResponseEntity.ok(invoice);
+    }
+
+
+    // ----------------------------------------------------------------------
+    // BẢO VỆ NGHIỆP VỤ TẠO STUDENT (GHI DANH)
+    // ----------------------------------------------------------------------
+
+    /**
+     * API CHÍNH THỨC Tạo tài khoản Học viên từ Lead (sau khi thanh toán).
+     * Hàm này kiểm tra InvoiceStatus = PAID trước khi tạo Student.
+     */
+    @PostMapping("/students/enroll/{registrationRequestId}")
+    public ResponseEntity<Student> enrollStudent(
+            @PathVariable Integer registrationRequestId
+    ) {
+        Student saved = studentService.createStudentAccount(registrationRequestId);
+
+        // Xóa mật khẩu trước khi trả về để bảo mật
+        saved.setPassword(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
 }
