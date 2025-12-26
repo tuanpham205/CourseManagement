@@ -68,7 +68,6 @@ public class AdminController {
         return ResponseEntity.ok(admin);
     }
 
-    // TẠO TÀI KHOẢN HỌC VIÊN CŨ ĐÃ BỊ XÓA VÌ VI PHẠM NGHIỆP VỤ.
 
     // Tạo tài khoản Giáo viên mới
     @PostMapping("/users/teacher")
