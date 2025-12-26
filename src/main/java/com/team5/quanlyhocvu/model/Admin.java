@@ -15,16 +15,12 @@ public class Admin {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
-    private String password; // LƯU Ý: Phải là giá trị ĐÃ ĐƯỢC HASH
-
     public Admin() {
     }
 
-    public Admin(String fullName, String email, String password) {
+    public Admin(String fullName, String email) {
         this.fullName = fullName;
         this.email = email;
-        this.password = password;
     }
 
     public Integer getId() {
@@ -51,13 +47,7 @@ public class Admin {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
-    }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
 
     @Override
     public String toString() {

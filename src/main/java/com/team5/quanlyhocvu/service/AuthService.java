@@ -1,7 +1,9 @@
 package com.team5.quanlyhocvu.service;
 
 import com.team5.quanlyhocvu.config.JwtUtil;
+import com.team5.quanlyhocvu.model.Admin;
 import com.team5.quanlyhocvu.model.User;
+import com.team5.quanlyhocvu.repository.AdminRepository;
 import com.team5.quanlyhocvu.repository.UserRepository;
 import com.team5.quanlyhocvu.service.exception.DataConflictException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,15 +19,17 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AdminRepository adminRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
+                       PasswordEncoder passwordEncoder, AdminRepository adminRepository,
                        AuthenticationManager authenticationManager, JwtUtil jwtUtil
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.adminRepository = adminRepository;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
     }
@@ -38,7 +42,7 @@ public class AuthService {
             throw new DataConflictException("Email " + email + " đã được sử dụng.");
         }
         String finalRole = (role != null ? role.toUpperCase() : "USER").replace("ROLE_", "");
-
+        //Lưu vào user để đăng nhập
         User newUser = new User();
         newUser.setFullName(fullName);
         newUser.setEmail(email);
@@ -48,6 +52,11 @@ public class AuthService {
         newUser.setEnabled(true);
 
         userRepository.save(newUser);
+        //Lưu vào admin để quản lý riêng nếu sau này có thêm thuộc tính
+        Admin admin = new Admin();
+        admin.setEmail(email);
+        admin.setFullName(fullName);
+        adminRepository.save(admin);
     }
 
     // Logic riêng cho ADMIN
@@ -85,4 +94,19 @@ public class AuthService {
             throw new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng.", e);
         }
     }
-}
+
+    //Tính năng đổi pass dùng chung
+    @Transactional
+    public void changePassword(String email,String oldPassword, String newPassword) {
+        // check email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng."));
+        //check pass
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Mật khẩu cũ không chính xác");
+        }
+        //mã hóa pass mới và lưu
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+    }

@@ -22,6 +22,7 @@ public class AdminService {
     private final EnglishLevelRepository englishLevelRepository; // Đã thêm
     private final PasswordEncoder passwordEncoder;
     private final EnglishLevelService englishLevelService;
+    private final UserRepository userRepository;
 
     public AdminService(AdminRepository adminRepository,
                         StudentRepository studentRepository,
@@ -30,7 +31,7 @@ public class AdminService {
                         CourseRepository courseRepository,
                         PasswordEncoder passwordEncoder,
                         EnglishLevelService englishLevelService,
-                        EnglishLevelRepository englishLevelRepository) { // Đã thêm vào constructor
+                        EnglishLevelRepository englishLevelRepository, UserRepository userRepository) {
         this.adminRepository = adminRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
@@ -39,18 +40,30 @@ public class AdminService {
         this.passwordEncoder = passwordEncoder;
         this.englishLevelService = englishLevelService;
         this.englishLevelRepository = englishLevelRepository; // Khởi tạo
+        this.userRepository = userRepository;
     }
 
     // =======================================
     // 1. QUẢN LÝ TÀI KHOẢN (CRUD ADMIN)
     // =======================================
 
+
     @Transactional
-    public Admin saveAdmin(Admin admin) {
-        if (adminRepository.findByEmail(admin.getEmail()).isPresent()) {
-            throw new DataConflictException("Email " + admin.getEmail() + " đã tồn tại trong hệ thống.");
+    public Admin saveAdmin(Admin admin, String rawPassword) {
+
+        if (userRepository.findByEmail(admin.getEmail()).isPresent()) {
+            throw new DataConflictException("Email " + admin.getEmail() + " đã tồn tại.");
         }
-        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
+
+        // 1. Lưu vào bảng Users (Nơi duy nhất giữ mật khẩu để đăng nhập)
+        User user = new User();
+        user.setEmail(admin.getEmail());
+        user.setFullName(admin.getFullName());
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRole("ADMIN");
+        user.setEnabled(true);
+        userRepository.save(user);
+        // 2. Lưu vào bảng Admins
         return adminRepository.save(admin);
     }
 

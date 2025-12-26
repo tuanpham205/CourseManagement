@@ -43,8 +43,20 @@ public class AdminController {
 
     // Tạo Admin mới
     @PostMapping("/users/admin")
-    public ResponseEntity<Admin> createAdmin(@RequestBody Admin admin) {
-        Admin savedAdmin = adminService.saveAdmin(admin);
+    public ResponseEntity<?> createAdmin(@RequestBody Map<String, Object> data) {
+        // 1. Lấy thông tin admin
+        Admin admin = new Admin();
+        admin.setFullName((String) data.get("fullName"));
+        admin.setEmail((String) data.get("email"));
+
+        // 2. Lấy mật khẩu
+        String rawPassword = (String) data.get("password");
+
+        if (rawPassword == null || admin.getEmail() == null) {
+            return ResponseEntity.badRequest().body("Thiếu email hoặc mật khẩu");
+        }
+
+        Admin savedAdmin = adminService.saveAdmin(admin, rawPassword);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedAdmin);
     }
 

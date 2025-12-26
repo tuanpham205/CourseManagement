@@ -1,12 +1,10 @@
 package com.team5.quanlyhocvu.controller;
 
+import com.team5.quanlyhocvu.config.JwtUtil;
 import com.team5.quanlyhocvu.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -15,9 +13,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtUtil jwtUtil) {
         this.authService = authService;
+        this.jwtUtil = jwtUtil;
     }
 
     // Đăng ký User
@@ -74,6 +74,36 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("token", token));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+        }
+    }
+    // Đổi pass
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String authHeader, // Lấy "Bearer <token>"
+            @RequestBody Map<String, String> data
+    ) {
+        // 1. Trích xuất token từ Header (bỏ chữ "Bearer ")
+        String token = authHeader.substring(7);
+
+        // 2. Dùng JwtUtil của bạn để lấy email
+        String email = jwtUtil.getUserNameFromJwtToken(token);
+
+        String oldPassword = data.get("oldPassword");
+        String newPassword = data.get("newPassword");
+
+        //check rỗng thông tin
+        if (email == null || oldPassword == null || newPassword == null) {
+            return ResponseEntity.badRequest().body("Vui lòng nhập đủ mật khẩu cũ và mới");
+        }
+
+        try {
+            //gọi service đổi pass
+            authService.changePassword(email, oldPassword, newPassword);
+            return ResponseEntity.ok("Đổi mật khẩu thành công!");
+        } catch (Exception e) {
+            // Trả về lỗi nếu mật khẩu cũ sai hoặc không tìm thấy user
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 }
