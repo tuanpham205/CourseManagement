@@ -1,10 +1,15 @@
 package com.team5.quanlyhocvu.service;
 
+import com.team5.quanlyhocvu.model.EnglishLevel;
 import com.team5.quanlyhocvu.model.Student;
 import com.team5.quanlyhocvu.model.RegistrationRequest;
+import com.team5.quanlyhocvu.model.User;
+import com.team5.quanlyhocvu.repository.EnglishLevelRepository;
 import com.team5.quanlyhocvu.repository.StudentRepository;
 import com.team5.quanlyhocvu.repository.RegistrationRequestRepository;
+import com.team5.quanlyhocvu.repository.UserRepository;
 import com.team5.quanlyhocvu.service.exception.ResourceNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,14 +22,20 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final RegistrationRequestRepository registrationRequestRepository;
     private final InvoiceService invoiceService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EnglishLevelRepository englishLevelRepository;
 
     public StudentService(
             StudentRepository studentRepository,
             RegistrationRequestRepository registrationRequestRepository,
-            InvoiceService invoiceService) {
+            InvoiceService invoiceService, UserRepository userRepository, PasswordEncoder passwordEncoder, EnglishLevelRepository englishLevelRepository) {
         this.studentRepository = studentRepository;
         this.registrationRequestRepository = registrationRequestRepository;
         this.invoiceService = invoiceService;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.englishLevelRepository = englishLevelRepository;
     }
 
     // HÀM TẠO TÀI KHOẢN HỌC VIÊN CHÍNH THỨC
@@ -44,15 +55,30 @@ public class StudentService {
         RegistrationRequest lead = registrationRequestRepository.findById(registrationRequestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Lead ID: " + registrationRequestId));
 
-        // 3. Thực hiện chuyển đổi và tạo tài khoản Student
-        Student student = new Student();
+        // 3. tạo tài khoản
+        User user = new User();
+        user.setEmail(lead.getEmail());
+        user.setFullName(lead.getFullName());
 
         // Chuyển đổi dữ liệu từ Lead sang Student Entity
+
+        String defaultPassword = "1234";
+        user.setPassword(passwordEncoder.encode(defaultPassword));
+        user.setRole("STUDENT");
+        user.setEnabled(true);
+        userRepository.save(user);
+        // 4. TẠO HỒ SƠ STUDENT (Để quản lý học vụ)
+        Student student = new Student();
         student.setFullname(lead.getFullName());
         student.setEmail(lead.getEmail());
         student.setPhone(lead.getPhone());
+        student.setUsername(lead.getEmail());
+        student.setRole("STUDENT");
 
-        // 4. Lưu Student vào cơ sở dữ liệu
+        // Khởi tạo trình độ tiếng Anh mặc định cho học viên mới
+        EnglishLevel newLevel = new EnglishLevel();
+        student.setLevel(englishLevelRepository.save(newLevel));
+
         return studentRepository.save(student);
     }
 

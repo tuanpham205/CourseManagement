@@ -71,9 +71,24 @@ public class AdminController {
 
     // Tạo tài khoản Giáo viên mới
     @PostMapping("/users/teacher")
-    public ResponseEntity<Teacher> createTeacher(@RequestBody Teacher teacher) {
-        Teacher saved = adminService.createTeacherAccount(teacher);
-        saved.setPassword(null);
+    public ResponseEntity<?> createTeacher(@RequestBody Map<String, Object> data) {
+        // 1. Tạo đối tượng Teacher và nạp thông tin từ Map
+        Teacher teacher = new Teacher();
+        teacher.setFullname((String) data.get("fullName"));
+        teacher.setEmail((String) data.get("email"));
+        teacher.setUsername((String) data.get("username"));
+        teacher.setPhone((String) data.get("phone"));
+        teacher.setSpecialization((String) data.get("specialization"));
+        // 2. Lấy mật khẩu thô từ JSON
+        String rawPassword = (String) data.get("password");
+        // 3. Kiểm tra tính hợp lệ đơn giản
+        if (rawPassword == null || teacher.getEmail() == null) {
+            return ResponseEntity.badRequest().body("Thiếu thông tin Email hoặc Mật khẩu.");
+        }
+
+        // 4. Gọi Service
+        Teacher saved = adminService.createTeacherAccount(teacher, rawPassword);
+        // Trả về kết quả
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
@@ -240,9 +255,6 @@ public class AdminController {
             @PathVariable Integer registrationRequestId
     ) {
         Student saved = studentService.createStudentAccount(registrationRequestId);
-
-        // Xóa mật khẩu trước khi trả về để bảo mật
-        saved.setPassword(null);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 }

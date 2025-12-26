@@ -19,27 +19,18 @@ public abstract class Person {
     private String username;
 
     @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false)
     private String fullname;
 
     private String email;
     private String phone;
     private LocalDate dateOfBirth;
 
-    // **********************************************
-    // THÊM TRƯỜNG ROLE
-    // Vì Person là @MappedSuperclass, cột này sẽ được tạo trong
-    // tất cả các bảng con (students, teachers, etc.)
     private String role;
-    // **********************************************
 
-    public Person(Integer id, String username, String password, String fullname,
+    public Person(Integer id, String username,  String fullname,
                   String email, String phone, LocalDate dateOfBirth, String role) {
         this.id = id;
         this.username = username;
-        this.password = password;
         this.fullname = fullname;
         this.email = email;
         this.phone = phone;
@@ -53,9 +44,6 @@ public abstract class Person {
     @Transient
     public abstract String getSpecificDetails();
 
-    // ==============================================
-    // Getter và Setter
-    // ==============================================
     public Integer getId() {
         return id;
     }
@@ -69,14 +57,6 @@ public abstract class Person {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getFullname() {

@@ -23,11 +23,11 @@ public class Student extends Person {
     public Student() {
     }
 
-    public Student(int id, String username, String password, String fullname, String email,
+    public Student(int id, String username, String fullname, String email,
                    String phone, LocalDate dateOfBirth,
                    EnglishLevel englishLevel, String address, Classroom currentClassroom) {
 
-        super(id, username, password, fullname, email, phone, dateOfBirth, null);
+        super(id, username, fullname, email, phone, dateOfBirth, null);
 
         this.englishLevel = englishLevel;
         this.address = address;

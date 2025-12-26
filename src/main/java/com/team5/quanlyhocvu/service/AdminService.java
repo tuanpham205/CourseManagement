@@ -19,7 +19,7 @@ public class AdminService {
     private final TeacherRepository teacherRepository;
     private final ClassroomRepository classroomRepository;
     private final CourseRepository courseRepository;
-    private final EnglishLevelRepository englishLevelRepository; // Đã thêm
+    private final EnglishLevelRepository englishLevelRepository;
     private final PasswordEncoder passwordEncoder;
     private final EnglishLevelService englishLevelService;
     private final UserRepository userRepository;
@@ -75,16 +75,22 @@ public class AdminService {
      * Tạo tài khoản Học viên mới. (ĐÃ SỬA LỖI KHỞI TẠO EnglishLevel)
      */
     @Transactional
-    public Student createStudentAccount(Student student) {
-
-        if(studentRepository.existsByEmail(student.getEmail())) {
-            throw new DataConflictException("Email da ton tai!");
+    public Student createStudentAccount(Student student, String rawPassword) {
+        if (userRepository.existsByEmail(student.getEmail())) {
+            throw new DataConflictException("Email đã tồn tại.");
         }
+
+        User user = new User();
+        user.setEmail(student.getEmail());
+        user.setFullName(student.getFullname());
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRole("STUDENT");
+        user.setEnabled(true);
+        userRepository.save(user);
 
         EnglishLevel newLevel = new EnglishLevel();
         newLevel = englishLevelRepository.save(newLevel);
         student.setLevel(newLevel);
-        student.setPassword(passwordEncoder.encode(student.getPassword()));
         student.setRole("STUDENT");
 
         return studentRepository.save(student);
@@ -94,11 +100,19 @@ public class AdminService {
      * Tạo tài khoản Giảng viên mới.
      */
     @Transactional
-    public Teacher createTeacherAccount(Teacher teacher) {
-        if(teacherRepository.existsByEmail(teacher.getEmail())) {
-            throw new DataConflictException("Email da ton tai!");
+    public Teacher createTeacherAccount(Teacher teacher, String rawPassword) {
+        if (userRepository.existsByEmail(teacher.getEmail())) {
+            throw new DataConflictException("Email đã tồn tại.");
         }
-        teacher.setPassword(passwordEncoder.encode(teacher.getPassword()));
+
+        User user = new User();
+        user.setEmail(teacher.getEmail());
+        user.setFullName(teacher.getFullname());
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRole("TEACHER");
+        user.setEnabled(true);
+        userRepository.save(user);
+
         teacher.setRole("TEACHER");
         return teacherRepository.save(teacher);
     }

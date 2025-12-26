@@ -45,7 +45,6 @@ public class TeacherService {
         existingTeacher.setEmail(updatedProfileData.getEmail());
         existingTeacher.setPhone(updatedProfileData.getPhone());
 
-        // Lưu ý: Username và Password cần được xử lý qua phương thức riêng biệt
 
         // Cập nhật chuyên môn (Giả định giáo viên có thể tự cập nhật)
         existingTeacher.setSpecialization(updatedProfileData.getSpecialization());

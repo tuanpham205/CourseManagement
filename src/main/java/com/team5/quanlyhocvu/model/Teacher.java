@@ -18,10 +18,10 @@
             this.classroomIds = new ArrayList<>();
         }
 
-        public Teacher(int id, String username, String password, String fullname,
+        public Teacher(int id, String username,  String fullname,
                        String email, String phone, LocalDate dateOfBirth,
                        String specialization) {
-            super(id, username, password, fullname, email, phone, dateOfBirth, null);
+            super(id, username,  fullname, email, phone, dateOfBirth, null);
             this.specialization = specialization;
             this.classroomIds = new ArrayList<>();
         }
