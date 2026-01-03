@@ -198,8 +198,8 @@ public class AdminController {
      */
     @PostMapping("/invoices")
     public ResponseEntity<Invoice> createInvoice(@RequestBody Map<String, Object> invoiceData) {
-        Integer registrationRequestId = (Integer) invoiceData.get("registrationRequestId");
-        Integer courseId = (Integer) invoiceData.get("courseId");
+        Integer registrationRequestId = Integer.valueOf(invoiceData.get("registrationRequestId").toString());
+        Integer courseId = Integer.valueOf(invoiceData.get("courseId").toString());
         BigDecimal totalAmount = new BigDecimal(invoiceData.get("totalAmount").toString());
         LocalDate dueDate = LocalDate.parse((String) invoiceData.get("dueDate"));
 

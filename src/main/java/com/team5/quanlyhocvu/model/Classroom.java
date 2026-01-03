@@ -1,6 +1,7 @@
 package com.team5.quanlyhocvu.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "classrooms")
@@ -18,6 +19,10 @@ public class Classroom {
     private String inputStandard;
     private String outputStandard;
 
+    private String roomNumber;
+    private LocalDate startDate;
+    private LocalDate endDate;
+
     @ManyToOne
     @JoinColumn(name = "course_id")
     private Course course;
@@ -26,12 +31,15 @@ public class Classroom {
 
     public Classroom() {}
 
-    public Classroom(String name, int capacity, int lessonCount, String input, String output) {
+    public Classroom(String name, int capacity, int lessonCount, String input, String output, String roomNumber, LocalDate startDate, LocalDate endDate) {
         this.className = name;
         this.maxCapacity = capacity;
         this.lessonCount = lessonCount;
         this.inputStandard = input;
         this.outputStandard = output;
+        this.roomNumber = roomNumber;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 
     public Integer getId() { return id; }
@@ -52,16 +60,18 @@ public class Classroom {
     public String getOutputStandard() { return outputStandard; }
     public void setOutputStandard(String outputStandard) { this.outputStandard = outputStandard; }
 
-    public Course getCourseId() { return course; }
-    public void setCourseId(Course course) { this.course = course; }
+    public String getRoomNumber() { return roomNumber; }
+    public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
+
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+    public Course getCourse() { return course; }
+    public void setCourse(Course course) { this.course = course; }
 
     public Integer getTeacherId() { return teacherId; }
     public void setTeacherId(Integer teacherId) { this.teacherId = teacherId; }
-
-    public void setCourse(Course course) {this.course = course;}
-
-    public Course getCourse() {
-        return this.course;
-    }
 }
-

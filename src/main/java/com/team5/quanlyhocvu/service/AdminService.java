@@ -8,6 +8,7 @@ import com.team5.quanlyhocvu.service.exception.RegistrationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,8 @@ public class AdminService {
                         CourseRepository courseRepository,
                         PasswordEncoder passwordEncoder,
                         EnglishLevelService englishLevelService,
-                        EnglishLevelRepository englishLevelRepository, UserRepository userRepository) {
+                        EnglishLevelRepository englishLevelRepository,
+                        UserRepository userRepository) {
         this.adminRepository = adminRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
@@ -39,23 +41,20 @@ public class AdminService {
         this.courseRepository = courseRepository;
         this.passwordEncoder = passwordEncoder;
         this.englishLevelService = englishLevelService;
-        this.englishLevelRepository = englishLevelRepository; // Khởi tạo
+        this.englishLevelRepository = englishLevelRepository;
         this.userRepository = userRepository;
     }
 
     // =======================================
-    // 1. QUẢN LÝ TÀI KHOẢN (CRUD ADMIN)
+    // 1. QUẢN LÝ TÀI KHOẢN
     // =======================================
-
 
     @Transactional
     public Admin saveAdmin(Admin admin, String rawPassword) {
-
         if (userRepository.findByEmail(admin.getEmail()).isPresent()) {
             throw new DataConflictException("Email " + admin.getEmail() + " đã tồn tại.");
         }
 
-        // 1. Lưu vào bảng Users (Nơi duy nhất giữ mật khẩu để đăng nhập)
         User user = new User();
         user.setEmail(admin.getEmail());
         user.setFullName(admin.getFullName());
@@ -63,7 +62,7 @@ public class AdminService {
         user.setRole("ADMIN");
         user.setEnabled(true);
         userRepository.save(user);
-        // 2. Lưu vào bảng Admins
+
         return adminRepository.save(admin);
     }
 
@@ -71,9 +70,6 @@ public class AdminService {
         return adminRepository.findById(id);
     }
 
-    /**
-     * Tạo tài khoản Học viên mới. (ĐÃ SỬA LỖI KHỞI TẠO EnglishLevel)
-     */
     @Transactional
     public Student createStudentAccount(Student student, String rawPassword) {
         if (userRepository.existsByEmail(student.getEmail())) {
@@ -88,17 +84,18 @@ public class AdminService {
         user.setEnabled(true);
         userRepository.save(user);
 
-        EnglishLevel newLevel = new EnglishLevel();
-        newLevel = englishLevelRepository.save(newLevel);
+        // Khởi tạo trình độ và gán ngày nhập học mặc định (Ngày hôm nay)
+        EnglishLevel newLevel = englishLevelRepository.save(new EnglishLevel());
         student.setLevel(newLevel);
         student.setRole("STUDENT");
+
+        if (student.getEnrollmentDate() == null) {
+            student.setEnrollmentDate(LocalDate.now());
+        }
 
         return studentRepository.save(student);
     }
 
-    /**
-     * Tạo tài khoản Giảng viên mới.
-     */
     @Transactional
     public Teacher createTeacherAccount(Teacher teacher, String rawPassword) {
         if (userRepository.existsByEmail(teacher.getEmail())) {
@@ -121,60 +118,36 @@ public class AdminService {
     // 2. QUẢN LÝ LỚP HỌC VÀ PHÂN CÔNG
     // =======================================
 
-    /**
-     * Gán học viên vào lớp học.
-     */
     @Transactional
     public Student assignStudentToClass(Integer studentId, Integer classId) {
-
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Học viên ID: " + studentId));
 
         Classroom classroom = classroomRepository.findById(classId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Lớp học ID: " + classId));
 
-        // KIỂM TRA 1: Học viên đã ở trong lớp này chưa
-        Classroom currentClassroom = student.getCurrentClassroom();
-
-        if (currentClassroom != null && classId.equals(currentClassroom.getId())) {
-            throw new RegistrationException("Học viên ID " + studentId + " đã đăng ký lớp này rồi.");
+        if (student.getCurrentClassroom() != null && classId.equals(student.getCurrentClassroom().getId())) {
+            throw new RegistrationException("Học viên đã ở trong lớp này.");
         }
 
-        // KIỂM TRA 2: Trình độ có phù hợp không
-        EnglishLevel studentLevel = student.getLevel();
-
-        if (studentLevel == null) {
-            throw new RegistrationException("Học viên chưa có thông tin trình độ tiếng Anh.");
-        }
-
-        String requiredStandard = classroom.getInputStandard();
-        String studentComparisonLevel = studentLevel.getComparisonLevel();
-
-        if (studentComparisonLevel == null || studentComparisonLevel.isEmpty()) {
-            throw new RegistrationException("Học viên chưa có điểm số được cập nhật để so sánh.");
+        // Logic kiểm tra trình độ đầu vào
+        if (student.getLevel() == null || student.getLevel().getComparisonLevel() == null) {
+            throw new RegistrationException("Học viên chưa có dữ liệu trình độ để xét lớp.");
         }
 
         boolean meetsStandard = englishLevelService.meetsInputStandard(
-                studentComparisonLevel,
-                requiredStandard
+                student.getLevel().getComparisonLevel(),
+                classroom.getInputStandard()
         );
 
         if (!meetsStandard) {
-            throw new RegistrationException(String.format(
-                    "Trình độ hiện tại (%s) của học viên KHÔNG ĐẠT tiêu chuẩn đầu vào (%s) của lớp học.",
-                    studentComparisonLevel,
-                    requiredStandard
-            ));
+            throw new RegistrationException("Trình độ học viên không đạt tiêu chuẩn đầu vào của lớp.");
         }
 
-        // Gán lớp mới
         student.setCurrentClassroom(classroom);
         return studentRepository.save(student);
     }
 
-    /**
-     * Phân công Giáo viên vào Lớp học (Đảm bảo tính nhất quán dữ liệu 2 chiều)
-     */
     @Transactional
     public Teacher assignTeacherToClassroom(Integer teacherId, Integer classroomId) {
         Teacher newTeacher = teacherRepository.findById(teacherId)
@@ -185,6 +158,7 @@ public class AdminService {
 
         Integer oldTeacherId = classroom.getTeacherId();
 
+        // Nếu giảng viên mới trùng giảng viên cũ, chỉ cập nhật danh sách lớp nếu thiếu
         if (teacherId.equals(oldTeacherId)) {
             if (!newTeacher.getClassroomIds().contains(classroomId)) {
                 newTeacher.addClassroomId(classroomId);
@@ -193,6 +167,7 @@ public class AdminService {
             return newTeacher;
         }
 
+        // Xóa lớp khỏi danh sách của giảng viên cũ (nếu có)
         if (oldTeacherId != null) {
             teacherRepository.findById(oldTeacherId).ifPresent(oldTeacher -> {
                 oldTeacher.removeClassroomId(classroomId);
@@ -200,6 +175,7 @@ public class AdminService {
             });
         }
 
+        // Cập nhật giảng viên mới cho lớp và ngược lại
         classroom.setTeacherId(teacherId);
         classroomRepository.save(classroom);
 
@@ -207,19 +183,21 @@ public class AdminService {
         return teacherRepository.save(newTeacher);
     }
 
-    /**
-     * Tạo Course mới.
-     */
     public Course createCourse(Course course) {
         return courseRepository.save(course);
     }
 
-    /**
-     * Tạo Classroom mới và gán nó cho một Course.
-     */
+    @Transactional
     public Classroom createClassroom(Integer courseId, Classroom classroom) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Course ID: " + courseId));
+
+        // Kiểm tra logic thời gian vận hành lớp học
+        if (classroom.getStartDate() != null && classroom.getEndDate() != null) {
+            if (classroom.getEndDate().isBefore(classroom.getStartDate())) {
+                throw new IllegalArgumentException("Ngày kết thúc học tập phải sau ngày khai giảng.");
+            }
+        }
 
         classroom.setCourse(course);
         return classroomRepository.save(classroom);
