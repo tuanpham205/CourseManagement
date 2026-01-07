@@ -22,24 +22,20 @@ public class Payment {
     private BigDecimal amount;
 
     @Column(columnDefinition = "TEXT")
-    private String note; // Đổi tên description thành note để rõ hơn
+    private String note;
 
     @Column(name = "payment_date", nullable = false)
-    private LocalDateTime paymentDate = LocalDateTime.now(); // Tự động set
+    private LocalDateTime paymentDate = LocalDateTime.now();
 
     // SỬ DỤNG ENUM CHO PHƯƠNG THỨC THANH TOÁN
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod method;
 
-    // Trường status đã bị XÓA vì trạng thái thuộc về Invoice
-
-    // --- Constructor ---
 
     public Payment() {
     }
 
-    // Constructor cho Service tạo mới
     public Payment(Invoice invoice, BigDecimal amount, String note, PaymentMethod method) {
         this.invoice = invoice;
         this.amount = amount;
@@ -48,7 +44,6 @@ public class Payment {
         this.paymentDate = LocalDateTime.now();
     }
 
-    // --- Getter và Setter ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -60,7 +55,7 @@ public class Payment {
     public void setAmount(BigDecimal amount) { this.amount = amount; }
 
     public String getNote() { return note; }
-    public void setNote(String note) { this.note = note; } // Thay Description bằng Note
+    public void setNote(String note) { this.note = note; }
 
     public LocalDateTime getPaymentDate() { return paymentDate; }
     public void setPaymentDate(LocalDateTime paymentDate) { this.paymentDate = paymentDate; }
@@ -68,5 +63,4 @@ public class Payment {
     public PaymentMethod getMethod() { return method; }
     public void setMethod(PaymentMethod method) { this.method = method; }
 
-    // (Bổ sung hàm toString() nếu cần)
 }

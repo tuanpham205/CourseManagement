@@ -2,6 +2,7 @@ package com.team5.quanlyhocvu.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -30,14 +31,14 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final JwtAuthenticationEntryPoint unauthorizedHandler; // <-- Khai báo mới
+    private final JwtAuthenticationEntryPoint unauthorizedHandler;
 
     public SecurityConfig(UserDetailsService userDetailsService,
                           JwtAuthenticationFilter jwtAuthenticationFilter,
-                          JwtAuthenticationEntryPoint unauthorizedHandler) { // <-- Inject mới
+                          JwtAuthenticationEntryPoint unauthorizedHandler) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.unauthorizedHandler = unauthorizedHandler; // <-- Gán giá trị
+        this.unauthorizedHandler = unauthorizedHandler;
     }
 
 
@@ -79,7 +80,8 @@ public class SecurityConfig {
 
                         // Endpoint Đăng ký tư vấn
                         .requestMatchers("/api/public/**").permitAll()
-
+                        // Endpoint xem khóa học
+                        .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
                         // Endpoint Admin chỉ cho phép ROLE ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
