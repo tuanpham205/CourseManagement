@@ -9,7 +9,7 @@
     @Table(name = "teachers")
     public class Teacher extends Person {
         private String specialization;
-        @ElementCollection // Tạo một bảng riêng để lưu danh sách ID lớp
+        @ElementCollection
         @CollectionTable(name = "teacher_classrooms", joinColumns = @JoinColumn(name = "teacher_id"))
         @Column(name = "classroom_id")
         private List<Integer> classroomIds;

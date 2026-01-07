@@ -2,6 +2,7 @@ package com.team5.quanlyhocvu.repository;
 
 import com.team5.quanlyhocvu.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,5 +33,6 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
     List<Student> findByCurrentClassroomIsNull();
 
     long countByCurrentClassroom_Id(Integer classroomId);
-
+    @Query("SELECT COUNT(s) FROM Student s")
+    long countTotalStudents();
 }

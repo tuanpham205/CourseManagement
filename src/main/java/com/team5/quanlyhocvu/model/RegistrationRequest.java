@@ -28,7 +28,7 @@ public class RegistrationRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RequestStatus status = RequestStatus.NEW; // Mặc định là NEW
+    private RequestStatus status = RequestStatus.NEW;
 
     // THÊM TRƯỜNG GHI CHÚ CỦA ADMIN
     @Column(columnDefinition = "TEXT")
