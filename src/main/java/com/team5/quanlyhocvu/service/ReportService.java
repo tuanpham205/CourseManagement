@@ -5,6 +5,7 @@ import com.team5.quanlyhocvu.repository.RegistrationRequestRepository;
 import com.team5.quanlyhocvu.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,12 +25,14 @@ public class ReportService {
 
     public Map<String, Object> getFinanceSummary() {
         Map<String, Object> map = new HashMap<>();
-        map.put("totalRevenue",
-                invoiceRepo.sumTotalRevenue() == null ? 0 : invoiceRepo.sumTotalRevenue()
-        );
-        map.put("totalDebt",
-                invoiceRepo.sumTotalDebt() == null ? 0 : invoiceRepo.sumTotalDebt()
-        );
+        // Lấy dữ liệu 1 lần để tối ưu hiệu năng
+        BigDecimal revenue = invoiceRepo.sumTotalRevenue();
+        BigDecimal debt = invoiceRepo.sumTotalDebt();
+
+        // Trả về 0 nếu null để Frontend không bị lỗi hiển thị
+        map.put("totalRevenue", revenue != null ? revenue : 0);
+        map.put("totalDebt", debt != null ? debt : 0);
+
         return map;
     }
 
