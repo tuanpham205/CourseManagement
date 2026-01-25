@@ -25,13 +25,15 @@ public class ReportService {
 
     public Map<String, Object> getFinanceSummary() {
         Map<String, Object> map = new HashMap<>();
-        // Lấy dữ liệu 1 lần để tối ưu hiệu năng
-        BigDecimal revenue = invoiceRepo.sumTotalRevenue();
-        BigDecimal debt = invoiceRepo.sumTotalDebt();
 
-        // Trả về 0 nếu null để Frontend không bị lỗi hiển thị
-        map.put("totalRevenue", revenue != null ? revenue : 0);
-        map.put("totalDebt", debt != null ? debt : 0);
+        // Doanh thu thực tế (Tổng từ Invoice)
+        BigDecimal actualRevenue = invoiceRepo.sumTotalRevenue();
+
+        // Doanh thu dự kiến (Tự động tính bằng cách khớp tên khóa học với bảng Course)
+        BigDecimal pendingRevenue = requestRepo.getPendingRevenue();
+
+        map.put("actualRevenue", actualRevenue != null ? actualRevenue : BigDecimal.ZERO);
+        map.put("pendingRevenue", pendingRevenue != null ? pendingRevenue : BigDecimal.ZERO);
 
         return map;
     }
