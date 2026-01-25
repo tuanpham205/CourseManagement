@@ -16,9 +16,9 @@ public class Invoice {
 
     @Column(name = "registration_request_id", nullable = false)
     private Integer registrationRequestId;
-
-    @Column(name = "course_id", nullable = false)
-    private Integer courseId;
+    @ManyToOne
+    @JoinColumn(name = "course_id", nullable = false)
+    private Course course;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
@@ -37,9 +37,14 @@ public class Invoice {
 
     public Invoice() {}
 
-    public Invoice(Integer registrationRequestId, Integer courseId, BigDecimal totalAmount, LocalDate dueDate) {
+    public Invoice(
+            Integer registrationRequestId,
+            Course course,
+            BigDecimal totalAmount,
+            LocalDate dueDate
+    ) {
         this.registrationRequestId = registrationRequestId;
-        this.courseId = courseId;
+        this.course = course;
         this.totalAmount = totalAmount;
         this.paidAmount = BigDecimal.ZERO;
         this.dueDate = dueDate;
@@ -47,14 +52,20 @@ public class Invoice {
         this.createdAt = LocalDateTime.now();
     }
 
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
     public Integer getRegistrationRequestId() { return registrationRequestId; }
     public void setRegistrationRequestId(Integer registrationRequestId) { this.registrationRequestId = registrationRequestId; }
 
-    public Integer getCourseId() { return courseId; }
-    public void setCourseId(Integer courseId) { this.courseId = courseId; }
+    public Course getCourse() {
+        return course;
+    }
+
+    public void setCourse(Course course) {
+        this.course = course;
+    }
 
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
@@ -77,7 +88,7 @@ public class Invoice {
         return "Invoice{" +
                 "id=" + id +
                 ", registrationRequestId=" + registrationRequestId +
-                ", courseId=" + courseId +
+                ", courseId=" + course.getId() +
                 ", totalAmount=" + totalAmount +
                 ", paidAmount=" + paidAmount +
                 ", dueDate=" + dueDate +

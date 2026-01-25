@@ -3,6 +3,8 @@ package com.team5.quanlyhocvu.model;
 import com.team5.quanlyhocvu.model.enums.RequestStatus;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "registration_requests")
 public class RegistrationRequest {
@@ -29,6 +31,14 @@ public class RegistrationRequest {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RequestStatus status = RequestStatus.NEW;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+    //gán giá trị createAt
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     // THÊM TRƯỜNG GHI CHÚ CỦA ADMIN
     @Column(columnDefinition = "TEXT")

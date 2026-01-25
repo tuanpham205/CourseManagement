@@ -33,6 +33,22 @@ public interface StudentRepository extends JpaRepository<Student, Integer> {
     List<Student> findByCurrentClassroomIsNull();
 
     long countByCurrentClassroom_Id(Integer classroomId);
+
+    // ================== BÁO CÁO ==================
+
+    // Tổng học viên (toàn hệ thống)
     @Query("SELECT COUNT(s) FROM Student s")
     long countTotalStudents();
+
+    // Số học viên nhập học trong khoảng thời gian
+    @Query("""
+        SELECT COUNT(s)
+        FROM Student s
+        WHERE s.enrollmentDate BETWEEN :from AND :to
+    """)
+    long countStudentsBetween(
+            @org.springframework.data.repository.query.Param("from") java.time.LocalDate from,
+            @org.springframework.data.repository.query.Param("to")   java.time.LocalDate to
+    );
+
 }
