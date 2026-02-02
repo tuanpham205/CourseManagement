@@ -1,20 +1,20 @@
 package com.team5.quanlyhocvu.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
+import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "students")
 public class Student extends Person {
 
-    @OneToOne
-    @JoinColumn(name = "level_id")
+    @ManyToOne
+    @JoinColumn(name = "level_id", nullable = false)
     private EnglishLevel englishLevel;
 
+    @Nationalized
+    @Column(name = "address", columnDefinition = "NVARCHAR(500)")
     private String address;
 
 

@@ -94,14 +94,18 @@ public class EnglishLevelService {
     // 2. LOGIC KIỂM TRA ĐẠT CHUẨN ĐẦU VÀO (GIỮ NGUYÊN)
     // =======================================
 
-    public boolean meetsInputStandard(String studentComparisonLevel, String requiredStandard) {
+    public boolean meetsInputStandard(EnglishLevel studentLevel, String requiredStandard) {
 
-        if (requiredStandard == null || requiredStandard.isEmpty() || studentComparisonLevel == null) {
+        if (studentLevel == null || requiredStandard == null || requiredStandard.isEmpty()) {
             return false;
         }
 
+        String studentComparisonLevel = buildComparisonLevel(studentLevel);
+        if (studentComparisonLevel == null) return false;
+
         String upperRequired = requiredStandard.toUpperCase();
         String upperStudent = studentComparisonLevel.toUpperCase();
+
         String type;
         String requiredValueStr;
 
@@ -118,38 +122,35 @@ public class EnglishLevelService {
             return false;
         }
 
-        // 2. Kiểm tra học viên có loại điểm phù hợp không (Phải cùng loại)
+        // Phải cùng loại
         if (!upperStudent.contains(type)) {
             return false;
         }
 
-        // 3. Phân tích và So sánh Điểm số:
-        if (type.equals("IELTS")) {
-            try {
-                double requiredIelts = Double.parseDouble(requiredValueStr);
-                double studentIelts = Double.parseDouble(upperStudent.replace("IELTS", "").trim());
-                return studentIelts >= requiredIelts;
-            } catch (Exception e) {
-                return false;
+        try {
+            if (type.equals("IELTS")) {
+                double required = Double.parseDouble(requiredValueStr);
+                double student = Double.parseDouble(upperStudent.replace("IELTS", "").trim());
+                return student >= required;
             }
-        }
-        else if (type.equals("TOEIC")) {
-            try {
-                int requiredToeic = Integer.parseInt(requiredValueStr);
-                int studentToeic = Integer.parseInt(upperStudent.replace("TOEIC", "").trim());
-                return studentToeic >= requiredToeic;
-            } catch (Exception e) {
-                return false;
+
+            if (type.equals("TOEIC")) {
+                int required = Integer.parseInt(requiredValueStr);
+                int student = Integer.parseInt(upperStudent.replace("TOEIC", "").trim());
+                return student >= required;
             }
-        }
-        else if (type.equals("VSTEP")) {
-            String studentVstepValue = upperStudent.replace("VSTEP", "").trim();
-            // SỬA LỖI: Dùng hàm so sánh thứ hạng VSTEP
-            return isVstepLevelSufficient(studentVstepValue, requiredValueStr);
+
+            if (type.equals("VSTEP")) {
+                String studentVstep = upperStudent.replace("VSTEP", "").trim();
+                return isVstepLevelSufficient(studentVstep, requiredValueStr);
+            }
+        } catch (Exception e) {
+            return false;
         }
 
         return false;
     }
+
 
     /**
      * Kiểm tra xem cấp độ VSTEP của học viên có bằng hoặc cao hơn cấp độ yêu cầu không.
@@ -172,4 +173,22 @@ public class EnglishLevelService {
         // So sánh thứ hạng số
         return studentRank >= requiredRank;
     }
+    private String buildComparisonLevel(EnglishLevel level) {
+        if (level == null) return null;
+
+        if (level.getIeltsBand() != null) {
+            return String.format("IELTS %.1f", level.getIeltsBand());
+        }
+
+        if (level.getToeicScore() != null) {
+            return String.format("TOEIC %d", level.getToeicScore());
+        }
+
+        if (level.getVstepLevel() != null) {
+            return String.format("VSTEP %s", level.getVstepLevel());
+        }
+
+        return null;
+    }
+
 }

@@ -1,12 +1,13 @@
 package com.team5.quanlyhocvu.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Column;
-
+import org.hibernate.annotations.Nationalized;
 import java.time.LocalDate;
 
 @MappedSuperclass
@@ -18,9 +19,10 @@ public abstract class Person {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
+    @Nationalized
+    @JsonProperty("fullname")
+    @Column(nullable = false, columnDefinition = "NVARCHAR(255)")
     private String fullname;
-
     private String email;
     private String phone;
     private LocalDate dateOfBirth;

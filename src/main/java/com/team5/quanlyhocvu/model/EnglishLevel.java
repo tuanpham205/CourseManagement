@@ -20,9 +20,9 @@ public class EnglishLevel {
     public void setToeicScore(Integer toeicScore) {this.toeicScore = toeicScore;}
     public String getComparisonLevel() {
         if (this.ieltsBand != null) {
-            // Định dạng IELTS: "IELTS 6.0"
             return String.format("IELTS %.1f", this.ieltsBand);
         }
+
 
         if (this.toeicScore != null) {
             // Định dạng TOEIC: "TOEIC 750"
@@ -37,5 +37,15 @@ public class EnglishLevel {
 
         return null;
     }
+    @PrePersist
+    @PreUpdate
+    public void validate() {
+        if (ieltsBand == null && toeicScore == null && vstepLevel == null) {
+            throw new IllegalStateException(
+                    "EnglishLevel phải có ít nhất 1 loại trình độ"
+            );
+        }
+    }
+
 }
 

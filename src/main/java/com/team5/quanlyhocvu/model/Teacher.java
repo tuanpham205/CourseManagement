@@ -1,5 +1,5 @@
     package com.team5.quanlyhocvu.model;
-
+    import org.hibernate.annotations.Nationalized;
     import jakarta.persistence.*;
     import java.time.LocalDate;
     import java.util.ArrayList;

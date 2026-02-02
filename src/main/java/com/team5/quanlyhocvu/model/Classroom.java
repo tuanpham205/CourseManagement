@@ -2,6 +2,7 @@ package com.team5.quanlyhocvu.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import org.hibernate.annotations.Nationalized;
 
 @Entity
 @Table(name = "classrooms")

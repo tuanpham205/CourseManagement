@@ -9,9 +9,8 @@ public class Admin {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id; // Dùng Integer thay vì int cho ID có thể null
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "NVARCHAR(255)")
     private String fullName;
-
     @Column(nullable = false, unique = true)
     private String email;
 

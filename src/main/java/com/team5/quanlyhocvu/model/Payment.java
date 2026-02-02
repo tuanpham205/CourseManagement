@@ -2,6 +2,8 @@ package com.team5.quanlyhocvu.model;
 
 import com.team5.quanlyhocvu.model.enums.PaymentMethod;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Nationalized;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -21,7 +23,8 @@ public class Payment {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(columnDefinition = "TEXT")
+    @Nationalized
+    @Column(name = "note", columnDefinition = "NVARCHAR(MAX)")
     private String note;
 
     @Column(name = "payment_date", nullable = false)

@@ -98,10 +98,14 @@ public class AdminService {
 
     @Transactional
     public Teacher createTeacherAccount(Teacher teacher, String rawPassword) {
+        // Debug thử xem fullname có bị null không
+        System.out.println("DEBUG: Teacher Fullname receive: " + teacher.getFullname());
+
         if (userRepository.existsByEmail(teacher.getEmail())) {
             throw new DataConflictException("Email đã tồn tại.");
         }
 
+        // Tạo User account
         User user = new User();
         user.setEmail(teacher.getEmail());
         user.setFullName(teacher.getFullname());
@@ -109,8 +113,13 @@ public class AdminService {
         user.setRole("TEACHER");
         user.setEnabled(true);
         userRepository.save(user);
-
         teacher.setRole("TEACHER");
+
+
+        if (teacher.getFullname() == null) {
+            throw new IllegalArgumentException("Dữ liệu fullname không được gửi tới Server!");
+        }
+
         return teacherRepository.save(teacher);
     }
 
@@ -129,18 +138,21 @@ public class AdminService {
         if (student.getCurrentClassroom() != null && classId.equals(student.getCurrentClassroom().getId())) {
             throw new RegistrationException("Học viên đã ở trong lớp này.");
         }
-
+        System.out.println("Student level: " + student.getLevel());
+        System.out.println("Student comparison: " + student.getLevel().getComparisonLevel());
+        System.out.println("Class input standard: " + classroom.getInputStandard());
         // Logic kiểm tra trình độ đầu vào
         if (student.getLevel() == null || student.getLevel().getComparisonLevel() == null) {
             throw new RegistrationException("Học viên chưa có dữ liệu trình độ để xét lớp.");
         }
 
-        boolean meetsStandard = englishLevelService.meetsInputStandard(
-                student.getLevel().getComparisonLevel(),
+        boolean ok = englishLevelService.meetsInputStandard(
+                student.getLevel(),
                 classroom.getInputStandard()
         );
 
-        if (!meetsStandard) {
+
+        if (!ok) {
             throw new RegistrationException("Trình độ học viên không đạt tiêu chuẩn đầu vào của lớp.");
         }
 

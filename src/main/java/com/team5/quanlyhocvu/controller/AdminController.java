@@ -69,29 +69,34 @@ public class AdminController {
     }
 
 
-    // Tạo tài khoản Giáo viên mới
     @PostMapping("/users/teacher")
     public ResponseEntity<?> createTeacher(@RequestBody Map<String, Object> data) {
-        // 1. Tạo đối tượng Teacher và nạp thông tin từ Map
         Teacher teacher = new Teacher();
-        teacher.setFullname((String) data.get("fullName"));
+
+        // Kiểm tra cả 'fullName' và 'fullname' để chắc chắn không bị null
+        String name = (String) data.get("fullName");
+        if (name == null) {
+            name = (String) data.get("fullname");
+        }
+
+        teacher.setFullname(name);
         teacher.setEmail((String) data.get("email"));
         teacher.setUsername((String) data.get("username"));
         teacher.setPhone((String) data.get("phone"));
         teacher.setSpecialization((String) data.get("specialization"));
-        // 2. Lấy mật khẩu thô từ JSON
+
         String rawPassword = (String) data.get("password");
-        // 3. Kiểm tra tính hợp lệ đơn giản
-        if (rawPassword == null || teacher.getEmail() == null) {
-            return ResponseEntity.badRequest().body("Thiếu thông tin Email hoặc Mật khẩu.");
+
+        // Kiểm tra log lần nữa trước khi gửi xuống Service
+        System.out.println("Controller nhận Name: " + name);
+
+        if (rawPassword == null || teacher.getEmail() == null || teacher.getFullname() == null) {
+            return ResponseEntity.badRequest().body("Thiếu thông tin: Email, Mật khẩu hoặc Họ tên là bắt buộc.");
         }
 
-        // 4. Gọi Service
         Teacher saved = adminService.createTeacherAccount(teacher, rawPassword);
-        // Trả về kết quả
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
-
     // Tạo khóa học mới
     @PostMapping("/course")
     public ResponseEntity<Course> createCourse(@RequestBody Course course) {

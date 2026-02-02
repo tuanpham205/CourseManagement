@@ -2,6 +2,7 @@ package com.team5.quanlyhocvu.model;
 
 import com.team5.quanlyhocvu.model.enums.RequestStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Nationalized;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +14,7 @@ public class RegistrationRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Nationalized
     @Column(nullable = false)
     private String fullName;
 
@@ -20,6 +22,7 @@ public class RegistrationRequest {
     private String phone;
 
     private String email;
+    @Nationalized
     private String address;
 
     private Double ieltsBand;
@@ -40,8 +43,8 @@ public class RegistrationRequest {
         this.createdAt = LocalDateTime.now();
     }
 
-    // THÊM TRƯỜNG GHI CHÚ CỦA ADMIN
-    @Column(columnDefinition = "TEXT")
+    @Nationalized
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String adminNote;
 
     public RegistrationRequest() {}
