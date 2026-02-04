@@ -40,12 +40,12 @@ public class EnglishLevel {
     @PrePersist
     @PreUpdate
     public void validate() {
-        if (ieltsBand == null && toeicScore == null && vstepLevel == null) {
-            throw new IllegalStateException(
-                    "EnglishLevel phải có ít nhất 1 loại trình độ"
-            );
+    //    if (ieltsBand == null && toeicScore == null && vstepLevel == null) {
+      //      throw new IllegalStateException(
+        //            "EnglishLevel phải có ít nhất 1 loại trình độ"
+          //  );
         }
     }
 
-}
+
 

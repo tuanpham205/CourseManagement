@@ -86,8 +86,14 @@ public class StudentService {
 
         // Khởi tạo trình độ tiếng Anh mặc định (Tránh lỗi Null khi truy cập level)
         EnglishLevel newLevel = new EnglishLevel();
-        student.setLevel(englishLevelRepository.save(newLevel));
+        // Map dữ liệu từ Lead sang Level
+        newLevel.setIeltsBand(lead.getIeltsBand());
+        newLevel.setToeicScore(lead.getToeicScore());
+        newLevel.setVstepLevel(lead.getVstepLevel());
 
+        // Gán level đã có dữ liệu cho student
+        student.setLevel(englishLevelRepository.save(newLevel));
+        // --------------------
         return studentRepository.save(student);
     }
 
